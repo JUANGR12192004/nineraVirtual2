@@ -1,0 +1,54 @@
+{% extends 'web/base.html' %}
+
+{% block title %}Crear cuenta · Niñera Virtual{% endblock %}
+
+{% block content %}
+<section class="auth-layout">
+    <article class="auth-hero">
+        <h2>Crea tu cuenta</h2>
+        <p>Protege a los más pequeños con alertas automáticas y métricas en tiempo real.</p>
+        <div class="auth-badge">Incluye detección de tijeras, zonas seguras y alertas Telegram</div>
+        <ul>
+            <li>Hashing seguro PBKDF2 para tus credenciales.</li>
+            <li>Historial de eventos exportable en CSV.</li>
+            <li>Gestión avanzada de zonas de riesgo por cámara.</li>
+        </ul>
+        <p class="auth-footer">Al registrarte aceptas nuestra política de uso responsable.</p>
+    </article>
+    <article class="auth-card">
+        <header>
+            <h2>Crear cuenta</h2>
+            <p>Completa los campos para habilitar tu acceso.</p>
+        </header>
+        <form method="post" class="auth-form">
+            {% csrf_token %}
+            {{ form.non_field_errors }}
+            <div class="auth-field">
+                {{ form.name.label_tag }}
+                {{ form.name }}
+                {{ form.name.errors }}
+            </div>
+            <div class="auth-field">
+                {{ form.email.label_tag }}
+                {{ form.email }}
+                {{ form.email.errors }}
+            </div>
+            <div class="auth-field">
+                {{ form.password.label_tag }}
+                {{ form.password }}
+                {{ form.password.errors }}
+            </div>
+            <div class="auth-field">
+                {{ form.confirm_password.label_tag }}
+                {{ form.confirm_password }}
+                {{ form.confirm_password.errors }}
+            </div>
+            <button type="submit" class="auth-button">Crear cuenta</button>
+        </form>
+        <footer>
+            <span>¿Ya tienes cuenta?</span>
+            <a href="{% url 'deteccion:web_login' %}">Inicia sesión</a>
+        </footer>
+    </article>
+</section>
+{% endblock %}

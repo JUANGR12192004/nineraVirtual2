@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}Panel de análisis | Niñera Virtual{% endblock %}
+
+{% block content %}
+<section class="nv-layout">
+    <article class="nv-hero">
+        <div>
+            <h2 class="nv-hero__title">Monitoreo proactivo 24/7</h2>
+            <p class="nv-hero__subtitle">
+                Detectamos comportamientos de riesgo en tiempo real y enviamos alertas con evidencia visual
+                directamente a tu dispositivo. Configura zonas seguras, múltiples cámaras y mantén registros
+                de cada evento crítico.
+            </p>
+            <div class="nv-hero__badge">
+                ⚡ Alertas en menos de 3 segundos · Integración con Telegram
+            </div>
+        </div>
+
+        <div class="nv-hero__metrics">
+            <div class="nv-chip">
+                <span class="nv-chip__label">Riesgos monitoreados</span>
+                <span class="nv-chip__value">Cuchillos · Tijeras · Escaleras</span>
+            </div>
+            <div class="nv-chip">
+                <span class="nv-chip__label">Tecnologías</span>
+                <span class="nv-chip__value">YOLOv8 · PBKDF2 · Observers</span>
+            </div>
+            <div class="nv-chip">
+                <span class="nv-chip__label">Notificaciones</span>
+                <span class="nv-chip__value">Telegram + Historial</span>
+            </div>
+        </div>
+    </article>
+
+    <article class="nv-card">
+        <header class="nv-card__header">
+            <h2 class="nv-card__title">Analiza una imagen o video</h2>
+            <p class="nv-card__subtitle">
+                Subimos el archivo, lo procesamos con nuestros modelos personalizados y mostramos el resultado en segundos.
+            </p>
+        </header>
+
+        <form method="post" enctype="multipart/form-data" class="nv-form">
+            {% csrf_token %}
+            <div class="nv-form__group">
+                <label class="nv-label" for="{{ form.file.id_for_label }}">Archivo</label>
+                {{ form.file }}
+                <p class="nv-helper">Admite fotografías o videos cortos en formatos comunes.</p>
+            </div>
+            <div class="nv-form__group">
+                <label class="nv-label" for="{{ form.notes.id_for_label }}">Notas</label>
+                {{ form.notes }}
+            </div>
+
+            <button type="submit" class="nv-button">Ejecutar análisis</button>
+        </form>
+
+        <footer class="nv-card__footer">
+            {% if model_error %}
+                <strong>Advertencia del modelo:</strong> {{ model_error }}
+            {% else %}
+                Recuerda que las imágenes procesadas se almacenan en el historial para auditoría y alertas.
+            {% endif %}
+        </footer>
+    </article>
+</section>
+{% endblock %}

@@ -1,0 +1,90 @@
+{% extends 'web/base.html' %}
+
+{% block title %}Dashboard · Niñera Virtual{% endblock %}
+
+{% block content %}
+<section class="dash-layout">
+    <aside class="dash-sidebar">
+        <section class="dash-panel">
+            <h3>Fuentes de video</h3>
+            <div class="dash-actions">
+                <button class="dash-btn dash-btn--primary" type="button">?? Agregar Cámara</button>
+                <button class="dash-btn dash-btn--primary" type="button">??? Agregar Video</button>
+                <button class="dash-btn dash-btn--danger" type="button">??? Quitar Fuente</button>
+            </div>
+        </section>
+        <section class="dash-panel">
+            <h3>Cámaras activas</h3>
+            <div class="dash-list dash-list--cameras">
+                <p class="dash-empty">Aún no hay fuentes activas. Súbelas desde los botones superiores.</p>
+            </div>
+        </section>
+        <section class="dash-panel" id="zonas">
+            <h3>Zonas de riesgo</h3>
+            <div class="dash-actions">
+                <button class="dash-btn dash-btn--secondary" type="button">?? Definir Zonas</button>
+                <button class="dash-btn dash-btn--secondary" type="button">?? Cargar Zonas (JSON)</button>
+                <button class="dash-btn dash-btn--secondary" type="button">?? Guardar Zonas (JSON)</button>
+            </div>
+        </section>
+    </aside>
+
+    <section class="dash-main">
+        <header class="dash-main__header">
+            <div>
+                <h2>Vista en tiempo real</h2>
+                <p>Selecciona una fuente para iniciar el monitoreo.</p>
+            </div>
+            <div class="dash-main__upload">
+                <form method="post" action="{% url 'deteccion:upload' %}" enctype="multipart/form-data" class="dash-upload-form">
+                    {% csrf_token %}
+                    {{ upload_form.file }}
+                    {{ upload_form.notes }}
+                    <button type="submit">Procesar archivo</button>
+                </form>
+            </div>
+        </header>
+        <div class="dash-video">
+            <p class="dash-video__placeholder">Niñera Virtual<br>Selecciona o agrega una fuente.</p>
+        </div>
+        <footer class="dash-status">Sistema listo.</footer>
+    </section>
+
+    <aside class="dash-right">
+        <section class="dash-panel" id="historial">
+            <h3>Alertas recientes</h3>
+            <div class="dash-list dash-list--alerts">
+                {% if alerts %}
+                    {% for alert in alerts %}
+                        <article class="dash-alert">
+                            <header>
+                                <h4>{{ alert.get_status_display }}</h4>
+                                <span>{{ alert.uploaded_at|date:"d/m/Y H:i" }}</span>
+                            </header>
+                            <p>{{ alert.output_data|default:"Sin detalles" }}</p>
+                        </article>
+                    {% endfor %}
+                {% else %}
+                    <p class="dash-empty">Aún no hay alertas registradas.</p>
+                {% endif %}
+            </div>
+        </section>
+        <section class="dash-panel">
+            <h3>Métricas</h3>
+            <div class="dash-metrics">
+                <div class="dash-metric"><span>Total</span><strong>{{ metrics.total }}</strong></div>
+                <div class="dash-metric"><span>Cuchillo</span><strong>{{ metrics.knife }}</strong></div>
+                <div class="dash-metric"><span>Escaleras</span><strong>{{ metrics.stairs }}</strong></div>
+                <div class="dash-metric"><span>Estufa</span><strong>{{ metrics.stove }}</strong></div>
+                <div class="dash-metric"><span>Olla</span><strong>{{ metrics.pot }}</strong></div>
+                <div class="dash-metric"><span>Zonas</span><strong>{{ metrics.zone }}</strong></div>
+                <div class="dash-metric"><span>Altura</span><strong>{{ metrics.high }}</strong></div>
+                <div class="dash-metric"><span>Tijeras</span><strong>{{ metrics.scissors }}</strong></div>
+            </div>
+        </section>
+        <section class="dash-panel">
+            <button class="dash-btn dash-btn--full" type="button">?? Exportar historial CSV</button>
+        </section>
+    </aside>
+</section>
+{% endblock %}

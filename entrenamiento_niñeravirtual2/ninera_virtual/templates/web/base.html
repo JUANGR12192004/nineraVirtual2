@@ -1,0 +1,54 @@
+﻿{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Niñera Virtual{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/web.css' %}">
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="web-body">
+    <header class="web-topbar">
+        <div class="web-brand">
+            <span class="web-logo">👶</span>
+            <div>
+                <h1>Niñera Virtual</h1>
+                <p>Monitoreo inteligente de riesgos en entornos infantiles</p>
+            </div>
+        </div>
+        {% if user %}
+        <nav class="web-nav">
+            <a href="{% url 'deteccion:web_dashboard' %}">Dashboard</a>
+            <a href="{% url 'deteccion:web_dashboard' %}#historial">Historial</a>
+            <a href="{% url 'deteccion:web_dashboard' %}#zonas">Zonas</a>
+        </nav>
+        {% endif %}
+        <div class="web-account">
+            {% if user %}
+                <span class="web-account__name">Sesión: {{ user.name }} • {{ user.email }}</span>
+                <a class="web-account__logout" href="{% url 'deteccion:web_logout' %}">Cerrar sesión</a>
+            {% else %}
+                <a class="web-account__logout" href="{% url 'deteccion:web_login' %}">Iniciar sesión</a>
+            {% endif %}
+        </div>
+    </header>
+
+    <main class="web-main">
+        {% if messages %}
+            <div class="web-messages">
+                {% for message in messages %}
+                    <div class="web-message web-message--{{ message.tags }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="web-footer">Niñera Virtual · Alertas inteligentes en tiempo real</footer>
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

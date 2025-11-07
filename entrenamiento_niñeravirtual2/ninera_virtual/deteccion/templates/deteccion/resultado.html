@@ -1,0 +1,46 @@
+{% extends 'web/base.html' %}
+
+{% block title %}Resultado de análisis · Niñera Virtual{% endblock %}
+
+{% block content %}
+<section class="result-layout">
+    <article class="result-card">
+        <header>
+            <h2>Resultado del análisis</h2>
+            <p>Archivo procesado: <strong>{{ result.input_file.name }}</strong></p>
+        </header>
+        {% if payload.error %}
+            <div class="result-alert result-alert--error">
+                <strong>Error durante la inferencia:</strong>
+                <p>{{ payload.error }}</p>
+            </div>
+        {% else %}
+            <div class="result-section">
+                <h3>Modelos utilizados</h3>
+                <p>{% if payload_models %}{{ payload_models|join:', ' }}{% else %}Sin información{% endif %}</p>
+            </div>
+            <div class="result-section">
+                <h3>Detecciones</h3>
+                {% if payload_detections %}
+                    <ul class="result-detections">
+                        {% for detection in payload_detections %}
+                            <li>?? {{ detection }}</li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p>No se detectaron riesgos en este archivo.</p>
+                {% endif %}
+            </div>
+        {% endif %}
+        {% if result.notes %}
+            <div class="result-section">
+                <h3>Notas</h3>
+                <p>{{ result.notes }}</p>
+            </div>
+        {% endif %}
+        <footer>
+            <a class="result-button" href="{% url 'deteccion:web_dashboard' %}">Volver al dashboard</a>
+        </footer>
+    </article>
+</section>
+{% endblock %}

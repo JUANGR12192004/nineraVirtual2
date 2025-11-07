@@ -1,0 +1,324 @@
+.nv-body {
+    margin: 0;
+    min-height: 100vh;
+    background: radial-gradient(120% 120% at 0% 0%, rgba(59,130,246,0.25) 0%, rgba(15,23,42,0.9) 40%, #0b1120 100%);
+    color: #e2e8f0;
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.nv-root {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.nv-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.6rem 3.5rem 1.4rem;
+}
+
+.nv-topbar__brand {
+    display: flex;
+    align-items: center;
+    gap: 1.2rem;
+}
+
+.nv-topbar__logo {
+    font-size: 2.6rem;
+    filter: drop-shadow(0 4px 12px rgba(56, 189, 248, 0.4));
+}
+
+.nv-topbar__title {
+    margin: 0;
+    font-size: 1.8rem;
+    font-weight: 700;
+}
+
+.nv-topbar__subtitle {
+    margin: 0.1rem 0 0;
+    color: #94a3b8;
+    font-size: 0.9rem;
+}
+
+.nv-topbar__meta {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.nv-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.5rem 1.1rem;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    letter-spacing: 0.02em;
+    background: rgba(56, 189, 248, 0.15);
+    color: #38bdf8;
+    border: 1px solid rgba(56, 189, 248, 0.3);
+}
+
+.nv-main {
+    flex: 1;
+    display: flex;
+    align-items: stretch;
+    justify-content: center;
+    padding: 0 3.5rem 3.5rem;
+}
+
+.nv-layout {
+    width: 100%;
+    max-width: 1220px;
+    display: grid;
+    grid-template-columns: minmax(320px, 0.85fr) minmax(360px, 0.75fr);
+    gap: 2.5rem;
+    align-items: stretch;
+}
+
+.nv-hero {
+    background: linear-gradient(160deg, rgba(56,189,248,0.1), rgba(15,23,42,0.85));
+    border: 1px solid rgba(94, 234, 212, 0.15);
+    border-radius: 28px;
+    padding: 2.6rem 2.8rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    box-shadow: 0 18px 40px rgba(15, 23, 42, 0.45);
+}
+
+.nv-hero__title {
+    margin: 0;
+    font-size: 2.4rem;
+    font-weight: 700;
+}
+
+.nv-hero__subtitle {
+    margin: 0.75rem 0 0;
+    font-size: 1rem;
+    line-height: 1.65;
+    color: #cbd5f5;
+    max-width: 28rem;
+}
+
+.nv-hero__badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: rgba(34, 211, 238, 0.12);
+    border: 1px solid rgba(165, 243, 252, 0.25);
+    border-radius: 20px;
+    padding: 0.65rem 1rem;
+    font-size: 0.85rem;
+    color: #bae6fd;
+    margin-top: 1rem;
+}
+
+.nv-hero__metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+}
+
+.nv-chip {
+    background: rgba(15, 118, 110, 0.2);
+    border: 1px solid rgba(45, 212, 191, 0.2);
+    border-radius: 18px;
+    padding: 0.9rem 1.2rem;
+}
+
+.nv-chip__label {
+    display: block;
+    font-size: 0.75rem;
+    color: #bae6fd;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 0.35rem;
+}
+
+.nv-chip__value {
+    font-size: 1.45rem;
+    font-weight: 600;
+}
+
+.nv-card {
+    background: rgba(15, 23, 42, 0.88);
+    border: 1px solid rgba(59, 130, 246, 0.25);
+    border-radius: 28px;
+    padding: 2.4rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.8rem;
+    box-shadow: 0 24px 50px rgba(2, 6, 23, 0.5);
+}
+
+.nv-card__header {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.nv-card__title {
+    margin: 0;
+    font-size: 1.9rem;
+    font-weight: 700;
+}
+
+.nv-card__subtitle {
+    margin: 0;
+    color: #94a3b8;
+    line-height: 1.6;
+}
+
+.nv-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.3rem;
+}
+
+.nv-form__group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+}
+
+.nv-label {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #e2e8f0;
+}
+
+.nv-input,
+.nv-textarea,
+.nv-file {
+    width: 100%;
+    border-radius: 16px;
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    background: rgba(15, 23, 42, 0.9);
+    color: #e2e8f0;
+    font-size: 1rem;
+    padding: 0.85rem 1.1rem;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.nv-input:focus,
+.nv-textarea:focus,
+.nv-file:focus {
+    outline: none;
+    border-color: rgba(56, 189, 248, 0.9);
+    box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.25);
+}
+
+.nv-textarea {
+    min-height: 120px;
+    resize: vertical;
+}
+
+.nv-helper {
+    font-size: 0.85rem;
+    color: #94a3b8;
+}
+
+.nv-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    border: none;
+    border-radius: 16px;
+    padding: 0.95rem 1.4rem;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    background: linear-gradient(135deg, #38bdf8 0%, #2563eb 90%);
+    color: #f8fafc;
+    box-shadow: 0 18px 30px rgba(37, 99, 235, 0.35);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.nv-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 22px 36px rgba(37, 99, 235, 0.45);
+}
+
+.nv-button:active {
+    transform: translateY(0);
+    box-shadow: 0 10px 24px rgba(37, 99, 235, 0.35);
+}
+
+.nv-card__footer {
+    border-top: 1px solid rgba(148, 163, 184, 0.18);
+    padding-top: 1.2rem;
+    margin-top: 1rem;
+    font-size: 0.9rem;
+    color: #94a3b8;
+}
+
+.nv-result {
+    display: grid;
+    gap: 1.6rem;
+}
+
+.nv-result__section {
+    background: rgba(30, 41, 59, 0.6);
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    border-radius: 20px;
+    padding: 1.4rem 1.6rem;
+}
+
+.nv-result__section h3 {
+    margin-top: 0;
+    font-size: 1.1rem;
+    letter-spacing: 0.01em;
+}
+
+.nv-result__list {
+    display: grid;
+    gap: 0.85rem;
+}
+
+.nv-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.45rem 0.9rem;
+    border-radius: 999px;
+    font-size: 0.85rem;
+    background: rgba(56, 189, 248, 0.15);
+    color: #bae6fd;
+}
+
+.nv-footer {
+    padding: 1.6rem 3.5rem;
+    color: #64748b;
+    font-size: 0.85rem;
+    border-top: 1px solid rgba(71, 85, 105, 0.3);
+    text-align: center;
+    background: rgba(15, 23, 42, 0.8);
+}
+
+@media (max-width: 1100px) {
+    .nv-layout {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 720px) {
+    .nv-topbar {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+        padding: 1.4rem 1.8rem;
+    }
+
+    .nv-main {
+        padding: 0 1.6rem 2.4rem;
+    }
+
+    .nv-card,
+    .nv-hero {
+        padding: 2rem;
+    }
+}
