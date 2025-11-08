@@ -1,24 +1,24 @@
-{% extends 'web/base.html' %}
+ï»¿{% extends 'web/base.html' %}
 
-{% block title %}Acceso seguro · Niñera Virtual{% endblock %}
+{% block title %}Acceso seguro Â· NiÃ±era Virtual{% endblock %}
 
 {% block content %}
 <section class="auth-layout">
     <article class="auth-hero">
-        <h2>Niñera Virtual</h2>
-        <p>Monitoreo inteligente de entornos infantiles con visión artificial, detección de riesgos y alertas instantáneas.</p>
-        <div class="auth-badge">Versión 4.0 + Patrones + Seguridad</div>
+        <h2>NiÃ±era Virtual</h2>
+        <p>Monitoreo inteligente de entornos infantiles con visiÃ³n artificial, detecciÃ³n de riesgos y alertas instantÃ¡neas.</p>
+        <div class="auth-badge">VersiÃ³n 4.0 + Patrones + Seguridad</div>
         <ul>
-            <li><strong>Seguridad proactiva:</strong> analizamos cámaras en tiempo real.</li>
-            <li><strong>Reacción inmediata:</strong> alertas con evidencia visual y registro histórico.</li>
-            <li><strong>Control total:</strong> panel intuitivo, métricas y zonas configurables.</li>
+            <li><strong>Seguridad proactiva:</strong> analizamos cÃ¡maras en tiempo real.</li>
+            <li><strong>ReacciÃ³n inmediata:</strong> alertas con evidencia visual y registro histÃ³rico.</li>
+            <li><strong>Control total:</strong> panel intuitivo, mÃ©tricas y zonas configurables.</li>
         </ul>
         <p class="auth-footer">Activa tu cuenta en minutos y comienza a monitorear al instante.</p>
     </article>
     <article class="auth-card">
         <header>
             <h2>Bienvenido de vuelta</h2>
-            <p>Inicia sesión con tus credenciales para acceder al panel.</p>
+            <p>Inicia sesiÃ³n con tus credenciales para acceder al panel.</p>
         </header>
         <form method="post" class="auth-form">
             {% csrf_token %}
@@ -36,8 +36,8 @@
             <button type="submit" class="auth-button">Ingresar</button>
         </form>
         <footer>
-            <span>¿Aún sin cuenta?</span>
-            <a href="{% url 'deteccion:web_register' %}">Regístrate</a>
+            <span>Â¿AÃºn sin cuenta?</span>
+            <a href="{% url 'deteccion:web_register' %}">RegÃ­strate</a>
         </footer>
     </article>
 </section>

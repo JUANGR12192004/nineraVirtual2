@@ -1,6 +1,6 @@
-{% extends 'web/base.html' %}
+ï»¿{% extends 'web/base.html' %}
 
-{% block title %}Dashboard · Niñera Virtual{% endblock %}
+{% block title %}Dashboard Â· NiÃ±era Virtual{% endblock %}
 
 {% block content %}
 <section class="dash-layout">
@@ -8,15 +8,15 @@
         <section class="dash-panel">
             <h3>Fuentes de video</h3>
             <div class="dash-actions">
-                <button class="dash-btn dash-btn--primary" type="button">?? Agregar Cámara</button>
+                <button class="dash-btn dash-btn--primary" type="button">?? Agregar CÃ¡mara</button>
                 <button class="dash-btn dash-btn--primary" type="button">??? Agregar Video</button>
                 <button class="dash-btn dash-btn--danger" type="button">??? Quitar Fuente</button>
             </div>
         </section>
         <section class="dash-panel">
-            <h3>Cámaras activas</h3>
+            <h3>CÃ¡maras activas</h3>
             <div class="dash-list dash-list--cameras">
-                <p class="dash-empty">Aún no hay fuentes activas. Súbelas desde los botones superiores.</p>
+                <p class="dash-empty">AÃºn no hay fuentes activas. SÃºbelas desde los botones superiores.</p>
             </div>
         </section>
         <section class="dash-panel" id="zonas">
@@ -45,7 +45,7 @@
             </div>
         </header>
         <div class="dash-video">
-            <p class="dash-video__placeholder">Niñera Virtual<br>Selecciona o agrega una fuente.</p>
+            <p class="dash-video__placeholder">NiÃ±era Virtual<br>Selecciona o agrega una fuente.</p>
         </div>
         <footer class="dash-status">Sistema listo.</footer>
     </section>
@@ -65,12 +65,12 @@
                         </article>
                     {% endfor %}
                 {% else %}
-                    <p class="dash-empty">Aún no hay alertas registradas.</p>
+                    <p class="dash-empty">AÃºn no hay alertas registradas.</p>
                 {% endif %}
             </div>
         </section>
         <section class="dash-panel">
-            <h3>Métricas</h3>
+            <h3>MÃ©tricas</h3>
             <div class="dash-metrics">
                 <div class="dash-metric"><span>Total</span><strong>{{ metrics.total }}</strong></div>
                 <div class="dash-metric"><span>Cuchillo</span><strong>{{ metrics.knife }}</strong></div>
