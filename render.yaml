@@ -4,6 +4,8 @@ services:
     plan: starter
     env: docker
     dockerfilePath: ./Dockerfile
+    healthCheckPath: /
+    postDeployCommand: python entrenamiento_niñeravirtual2/ninera_virtual/manage.py migrate --noinput
     envVars:
       - key: DJANGO_DEBUG
         value: "False"
@@ -26,4 +28,3 @@ services:
 databases:
   - name: ninera-virtual-db
     plan: free
-
