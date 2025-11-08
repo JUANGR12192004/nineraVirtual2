@@ -18,7 +18,7 @@ services:
           name: ninera-virtual-db
           property: connectionString
       - key: WEB_CONCURRENCY
-        value: "2"
+        value: "1"
       - key: MEDIA_ROOT
         value: /data/media
       - key: LEGACY_DB_PATH

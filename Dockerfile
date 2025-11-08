@@ -3,7 +3,13 @@ FROM python:3.12-slim
 # Prevent Python from writing .pyc files and enable unbuffered logs
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    PIP_NO_CACHE_DIR=1
+    PIP_NO_CACHE_DIR=1 \
+    OMP_NUM_THREADS=1 \
+    OPENBLAS_NUM_THREADS=1 \
+    MKL_NUM_THREADS=1 \
+    NUMEXPR_NUM_THREADS=1 \
+    TORCH_NUM_THREADS=1 \
+    MALLOC_ARENA_MAX=2
 
 # System dependencies for opencv/ultralytics/torch and video processing
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -48,4 +54,3 @@ RUN chmod +x /entrypoint.sh
 
 EXPOSE 8000
 CMD ["/entrypoint.sh"]
-
