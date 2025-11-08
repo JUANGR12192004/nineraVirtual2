@@ -1,14 +1,9 @@
 services:
   - type: web
     name: ninera-virtual
-    env: python
     plan: starter
-    buildCommand: |
-      pip install --upgrade pip
-      pip install -r entrenamiento_niñeravirtual2/requirements.txt
-      python entrenamiento_niñeravirtual2/ninera_virtual/manage.py collectstatic --noinput
-    startCommand: gunicorn ninera_virtual.wsgi:application --chdir entrenamiento_niñeravirtual2/ninera_virtual
-    postDeployCommand: python entrenamiento_niñeravirtual2/ninera_virtual/manage.py migrate
+    env: docker
+    dockerfilePath: ./Dockerfile
     envVars:
       - key: DJANGO_DEBUG
         value: "False"
@@ -18,10 +13,17 @@ services:
         fromDatabase:
           name: ninera-virtual-db
           property: connectionString
-      - key: PYTHON_VERSION
-        value: 3.12.2
       - key: WEB_CONCURRENCY
         value: "2"
+      - key: MEDIA_ROOT
+        value: /data/media
+      - key: LEGACY_DB_PATH
+        value: /data/ninera_virtual.db
+    disk:
+      name: data
+      mountPath: /data
+      sizeGB: 5
 databases:
   - name: ninera-virtual-db
     plan: free
+

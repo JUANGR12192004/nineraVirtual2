@@ -1,0 +1,24 @@
+.git
+*.py[cod]
+__pycache__/
+.pytest_cache/
+.mypy_cache/
+.venv/
+.env
+.DS_Store
+
+# Local DBs and logs
+*.sqlite3
+*.db
+*.log
+ninera_virtual.db
+entrenamiento_niñeravirtual2/ninera_virtual/db.sqlite3
+
+# Large, user-uploaded media should not go into the image
+media/
+entrenamiento_niñeravirtual2/ninera_virtual/media/
+
+# Videos captured locally
+*.mp4
+
+# Note: keep model .pt files included
