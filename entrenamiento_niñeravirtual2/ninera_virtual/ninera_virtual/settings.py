@@ -87,8 +87,12 @@ DATABASES = {
 }
 
 if DATABASES["default"]["ENGINE"].endswith("sqlite3"):
-    # dj-database-url returns a plain string path for sqlite; normalize it.
+    # Normalize sqlite path and strip any SSL options accidentally added.
     DATABASES["default"]["NAME"] = str(Path(DATABASES["default"]["NAME"]))
+    opts = DATABASES["default"].setdefault("OPTIONS", {})
+    for k in ("sslmode", "sslrootcert", "sslcert", "sslkey"):
+        if k in opts:
+            del opts[k]
 
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
