@@ -4,8 +4,11 @@ set -euo pipefail
 # Ensure Python can import top-level packages (e.g., ml_models)
 export PYTHONPATH="/app/entrenamiento_niñeravirtual2:${PYTHONPATH:-}"
 
-# Ensure media and legacy DB locations exist
+# Ensure media and DB locations exist
 mkdir -p "$(dirname "${LEGACY_DB_PATH:-/data/ninera_virtual.db}")" "$MEDIA_ROOT"
+
+# Run migrations (idempotent and fast); ensures sessions table exists
+python entrenamiento_niñeravirtual2/ninera_virtual/manage.py migrate --noinput
 
 exec gunicorn ninera_virtual.wsgi:application \
   --chdir entrenamiento_niñeravirtual2/ninera_virtual \

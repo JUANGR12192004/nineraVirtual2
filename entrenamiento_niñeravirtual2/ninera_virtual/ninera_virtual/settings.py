@@ -77,7 +77,10 @@ TEMPLATES = [
 WSGI_APPLICATION = "ninera_virtual.wsgi.application"
 ASGI_APPLICATION = "ninera_virtual.asgi.application"
 
-default_db_url = os.getenv("DATABASE_URL", f"sqlite:///{BASE_DIR / 'db.sqlite3'}")
+# Default DB: prefer DATABASE_URL (e.g., Postgres). If not provided, use
+# a SQLite file on the persistent disk (/data) to survive restarts.
+default_sqlite_path = Path(os.getenv("DJANGO_SQLITE_PATH", "/data/django.sqlite3"))
+default_db_url = os.getenv("DATABASE_URL", f"sqlite:///{default_sqlite_path}")
 DATABASES = {
     "default": dj_database_url.config(
         default=default_db_url,
