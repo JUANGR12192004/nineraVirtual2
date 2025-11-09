@@ -1,0 +1,157 @@
+{% extends 'web/base.html' %}
+
+{% block title %}Dashboard | Niñera Virtual{% endblock %}
+
+{% block content %}
+<section class="dash-layout" style="display:grid;grid-template-columns:280px 1fr 320px;gap:16px">
+    <aside>
+        <section class="dash-panel" style="background:#0b1020;border:1px solid #1c2333;border-radius:10px;padding:14px">
+            <h3 style="margin-top:0">Fuentes de video</h3>
+            <div class="dash-actions" style="display:flex;flex-direction:column;gap:8px">
+                <button id="btn-add-camera" class="dash-btn dash-btn--primary" type="button">📷 Agregar Cámara</button>
+                <button id="btn-add-video" class="dash-btn dash-btn--primary" type="button">🎞️ Agregar Video</button>
+                <button class="dash-btn dash-btn--danger" type="button" disabled title="Próximamente">🗑️ Quitar Fuente</button>
+            </div>
+        </section>
+        <section class="dash-panel" style="background:#0b1020;border:1px solid #1c2333;border-radius:10px;padding:14px">
+            <h3>Cámaras activas</h3>
+            <div class="dash-list dash-list--cameras">
+                <p class="dash-empty">Aún no hay fuentes activas. Sube una desde los botones superiores.</p>
+            </div>
+        </section>
+        <section class="dash-panel" id="zonas" style="background:#0b1020;border:1px solid #1c2333;border-radius:10px;padding:14px">
+            <h3>Zonas de riesgo</h3>
+            <div class="dash-actions" style="display:flex;flex-direction:column;gap:8px">
+                <button class="dash-btn dash-btn--secondary" type="button" disabled title="Próximamente">✏️ Definir Zonas</button>
+                <button class="dash-btn dash-btn--secondary" type="button" disabled title="Próximamente">📥 Cargar Zonas (JSON)</button>
+                <button class="dash-btn dash-btn--secondary" type="button" disabled title="Próximamente">💾 Guardar Zonas (JSON)</button>
+            </div>
+        </section>
+    </aside>
+
+    <section class="dash-main" style="background:#0b1020;border:1px solid #1c2333;border-radius:10px;padding:14px">
+        <header class="dash-main__header" style="display:flex;justify-content:space-between;gap:16px;align-items:center">
+            <div>
+                <h2 style="margin:0">Vista en tiempo real</h2>
+                <p style="margin:0;color:#9fb3c8">Selecciona una fuente para iniciar el monitoreo.</p>
+            </div>
+            <div class="dash-main__upload">
+                <form method="post" action="{% url 'deteccion:upload' %}" enctype="multipart/form-data" class="dash-upload-form" style="display:flex;gap:8px;align-items:center">
+                    {% csrf_token %}
+                    {{ upload_form.file }}
+                    {{ upload_form.notes }}
+                    <button type="submit">Procesar archivo</button>
+                </form>
+            </div>
+        </header>
+        <div class="dash-video" style="position:relative;min-height:360px;display:flex;align-items:center;justify-content:center;border-radius:8px;background:#0a0f1d;border:1px dashed #26314b;margin-top:12px">
+            <p class="dash-video__placeholder">Niñera Virtual<br>Selecciona o agrega una fuente.</p>
+        </div>
+        <footer class="dash-status" style="margin-top:10px;color:#9fb3c8">Sistema listo.</footer>
+    </section>
+
+    <aside>
+        <section class="dash-panel" id="historial" style="background:#0b1020;border:1px solid #1c2333;border-radius:10px;padding:14px">
+            <h3>Alertas recientes</h3>
+            <div class="dash-list dash-list--alerts">
+                {% if alerts %}
+                    {% for alert in alerts %}
+                        <article class="dash-alert" style="border-bottom:1px solid #1c2333;padding:8px 0">
+                            <header style="display:flex;justify-content:space-between">
+                                <h4>{{ alert.get_status_display }}</h4>
+                                <span>{{ alert.uploaded_at|date:"d/m/Y H:i" }}</span>
+                            </header>
+                            <pre style="white-space:pre-wrap;color:#9fb3c8">{{ alert.output_data|default:"Sin detalles" }}</pre>
+                        </article>
+                    {% endfor %}
+                {% else %}
+                    <p class="dash-empty">Aún no hay alertas registradas.</p>
+                {% endif %}
+            </div>
+        </section>
+        <section class="dash-panel" style="background:#0b1020;border:1px solid #1c2333;border-radius:10px;padding:14px">
+            <h3>Métricas</h3>
+            <div class="dash-metrics" style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                <div class="dash-metric"><span>Total</span><strong>{{ metrics.total }}</strong></div>
+                <div class="dash-metric"><span>Cuchillo</span><strong>{{ metrics.knife }}</strong></div>
+                <div class="dash-metric"><span>Escaleras</span><strong>{{ metrics.stairs }}</strong></div>
+                <div class="dash-metric"><span>Estufa</span><strong>{{ metrics.stove }}</strong></div>
+                <div class="dash-metric"><span>Olla</span><strong>{{ metrics.pot }}</strong></div>
+                <div class="dash-metric"><span>Zonas</span><strong>{{ metrics.zone }}</strong></div>
+                <div class="dash-metric"><span>Altura</span><strong>{{ metrics.high }}</strong></div>
+                <div class="dash-metric"><span>Tijeras</span><strong>{{ metrics.scissors }}</strong></div>
+            </div>
+        </section>
+        <section class="dash-panel" style="background:#0b1020;border:1px solid #1c2333;border-radius:10px;padding:14px">
+            <button class="dash-btn dash-btn--full" type="button" disabled title="Próximamente">⏳ Exportar historial CSV</button>
+        </section>
+    </aside>
+</section>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+(function(){
+  const fileInput = document.getElementById('upload_file_input');
+  const btnVideo = document.getElementById('btn-add-video');
+  const btnCam = document.getElementById('btn-add-camera');
+  if (btnVideo && fileInput) btnVideo.addEventListener('click',()=>fileInput.click());
+
+  const container = document.querySelector('.dash-video');
+  let started = false, ws, sendCanvas, ctx, videoEl, overlay;
+
+  async function startStreaming(){
+    if (started) return; started = true;
+    container.innerHTML = '<p class="dash-video__placeholder">Inicializando cámara...</p>';
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({video:true, audio:false});
+      // UI
+      container.style.position='relative';
+      container.innerHTML='';
+      videoEl = document.createElement('video');
+      videoEl.autoplay = true; videoEl.muted = true; videoEl.playsInline = true; videoEl.style.maxWidth='100%';
+      overlay = document.createElement('canvas'); overlay.style.position='absolute'; overlay.style.top='0'; overlay.style.left='0'; overlay.style.pointerEvents='none';
+      container.appendChild(videoEl); container.appendChild(overlay);
+      videoEl.srcObject = stream;
+
+      // WS + envío
+      ws = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/ws/stream');
+      sendCanvas = document.createElement('canvas');
+      ctx = sendCanvas.getContext('2d');
+
+      function draw(items, srcW, srcH){
+        const rect = videoEl.getBoundingClientRect();
+        overlay.width = rect.width; overlay.height = rect.height;
+        const o = overlay.getContext('2d'); o.clearRect(0,0,overlay.width,overlay.height);
+        const sx = overlay.width / srcW; const sy = overlay.height / srcH;
+        o.strokeStyle = '#20E3B2'; o.lineWidth = 2; o.font='12px Inter'; o.fillStyle='#20E3B2';
+        (items||[]).forEach(d=>{ const [x1,y1,x2,y2]=d.box||[0,0,0,0]; o.strokeRect(x1*sx,y1*sy,(x2-x1)*sx,(y2-y1)*sy); o.fillText(`${d.label||''} ${(d.conf||0).toFixed(2)}`, x1*sx+2, y1*sy+12); });
+      }
+
+      ws.onopen = () => {
+        const tick = () => {
+          if (!videoEl || !videoEl.videoWidth) return;
+          const targetW = 416; const targetH = Math.round(videoEl.videoHeight * (targetW / videoEl.videoWidth));
+          sendCanvas.width = targetW; sendCanvas.height = targetH; ctx.drawImage(videoEl,0,0,targetW,targetH);
+          const dataUrl = sendCanvas.toDataURL('image/jpeg', 0.6);
+          ws.send(JSON.stringify({type:'frame', data:dataUrl, ts:Date.now(), w:targetW, h:targetH}));
+        };
+        setInterval(tick, 1000);
+      };
+      ws.onmessage = (ev) => {
+        try { const msg = JSON.parse(ev.data); if (msg.type==='detections') draw(msg.items||[], sendCanvas.width||416, sendCanvas.height||234); } catch {}
+      };
+      ws.onerror = () => { console.warn('WS error'); };
+      ws.onclose = () => { console.warn('WS closed'); };
+    } catch(e) {
+      container.innerHTML = '<p class="dash-video__placeholder">No se pudo acceder a la cámara.</p>';
+      console.warn('getUserMedia error:', e);
+      started = false;
+    }
+  }
+
+  if (btnCam) btnCam.addEventListener('click', startStreaming);
+})();
+</script>
+{% endblock %}
+

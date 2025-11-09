@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+
+{% block title %}Resultado de análisis | Niñera Virtual{% endblock %}
+
+{% block content %}
+<section class="result-layout" style="max-width:1000px;margin:0 auto">
+    <article class="result-card" style="background:#0b1020;border:1px solid #1c2333;border-radius:10px;padding:16px">
+        <header>
+            <h2>Resultado del análisis</h2>
+            <p>Archivo procesado: <strong>{{ result.input_file.name }}</strong></p>
+        </header>
+        {% if payload.error %}
+            <div class="result-alert result-alert--error" style="background:#2e0f13;color:#ffb4c2;padding:12px;border-radius:8px">
+                <strong>Error durante la inferencia:</strong>
+                <p>{{ payload.error }}</p>
+            </div>
+        {% else %}
+            {% if payload.annotated_data_url %}
+            <div class="result-section" style="margin:14px 0">
+                <h3>Vista anotada</h3>
+                <img src="{{ payload.annotated_data_url }}" alt="Resultado" style="max-width:100%;border-radius:8px;border:1px solid #2a2f3a;">
+            </div>
+            {% endif %}
+            <div class="result-section" style="margin:14px 0">
+                <h3>Modelos utilizados</h3>
+                <p>{% if payload_models %}{{ payload_models|join:', ' }}{% else %}Sin información{% endif %}</p>
+            </div>
+            <div class="result-section" style="margin:14px 0">
+                <h3>Detecciones</h3>
+                {% if payload_detections %}
+                    <ul class="result-detections">
+                        {% for d in payload_detections %}
+                            <li><strong>{{ d.label }}</strong> ({{ d.conf|floatformat:2 }}) [{{ d.src }}] — caja: {{ d.box }}</li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p>No se detectaron riesgos en este archivo.</p>
+                {% endif %}
+            </div>
+        {% endif %}
+        {% if result.notes %}
+            <div class="result-section" style="margin:14px 0">
+                <h3>Notas</h3>
+                <p>{{ result.notes }}</p>
+            </div>
+        {% endif %}
+        <footer style="margin-top:16px">
+            <a class="result-button" href="{% url 'deteccion:web_dashboard' %}">Volver al dashboard</a>
+        </footer>
+    </article>
+</section>
+{% endblock %}
+
