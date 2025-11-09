@@ -1,6 +1,6 @@
 ﻿{% extends 'web/base.html' %}
 
-{% block title %}Dashboard · Niñera Virtual{% endblock %}
+{% block title %}Dashboard | Niñera Virtual{% endblock %}
 
 {% block content %}
 <section class="dash-layout">
@@ -8,8 +8,8 @@
         <section class="dash-panel">
             <h3>Fuentes de video</h3>
             <div class="dash-actions">
-                <button class="dash-btn dash-btn--primary" type="button">?? Agregar Cámara</button>
-                <button class="dash-btn dash-btn--primary" type="button">??? Agregar Video</button>
+                <button id="btn-add-camera" class="dash-btn dash-btn--primary" type="button">📷 Agregar Cámara</button>
+                <button id="btn-add-video" class="dash-btn dash-btn--primary" type="button">🎞️ Agregar Video</button>
                 <button class="dash-btn dash-btn--danger" type="button">??? Quitar Fuente</button>
             </div>
         </section>
@@ -83,8 +83,20 @@
             </div>
         </section>
         <section class="dash-panel">
-            <button class="dash-btn dash-btn--full" type="button">?? Exportar historial CSV</button>
+            <button class="dash-btn dash-btn--full" type="button" disabled title="Próximamente">⏳ Exportar historial CSV</button>
         </section>
     </aside>
 </section>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+(function(){
+  const fileInput=document.getElementById("upload_file_input");
+  const btnVideo=document.getElementById("btn-add-video");
+  const btnCam=document.getElementById("btn-add-camera");
+  if(btnVideo&&fileInput){btnVideo.addEventListener("click",()=>fileInput.click());}
+  if(btnCam&&fileInput){btnCam.addEventListener("click",()=>fileInput.click());}
+})();
+</script>
 {% endblock %}

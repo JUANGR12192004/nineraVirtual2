@@ -9,6 +9,9 @@ class UploadForm(forms.Form):
         widget=forms.ClearableFileInput(
             attrs={
                 "class": "dash-input-file",
+                "id": "upload_file_input",
+                "accept": "image/*,video/*",
+                "capture": "environment",
             }
         ),
     )

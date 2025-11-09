@@ -1,12 +1,12 @@
-{% extends 'web/base.html' %}
+Ôªø{% extends 'base.html' %}
 
-{% block title %}Resultado de an·lisis ∑ NiÒera Virtual{% endblock %}
+{% block title %}Resultado de an√°lisis | Ni√±era Virtual{% endblock %}
 
 {% block content %}
 <section class="result-layout">
     <article class="result-card">
         <header>
-            <h2>Resultado del an·lisis</h2>
+            <h2>Resultado del an√°lisis</h2>
             <p>Archivo procesado: <strong>{{ result.input_file.name }}</strong></p>
         </header>
         {% if payload.error %}
@@ -17,14 +17,14 @@
         {% else %}
             <div class="result-section">
                 <h3>Modelos utilizados</h3>
-                <p>{% if payload_models %}{{ payload_models|join:', ' }}{% else %}Sin informaciÛn{% endif %}</p>
+                <p>{% if payload_models %}{{ payload_models|join:', ' }}{% else %}Sin informaci√≥n{% endif %}</p>
             </div>
             <div class="result-section">
                 <h3>Detecciones</h3>
                 {% if payload_detections %}
                     <ul class="result-detections">
                         {% for detection in payload_detections %}
-                            <li>?? {{ detection }}</li>
+                            <li>‚Ä¢ {{ detection }}</li>
                         {% endfor %}
                     </ul>
                 {% else %}
