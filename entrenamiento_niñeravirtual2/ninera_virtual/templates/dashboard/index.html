@@ -93,55 +93,66 @@
 
 {% block extra_scripts %}
 <script>
-(async function(){
+(function(){
   const fileInput = document.getElementById('upload_file_input');
   const btnVideo = document.getElementById('btn-add-video');
   const btnCam = document.getElementById('btn-add-camera');
   if (btnVideo && fileInput) btnVideo.addEventListener('click',()=>fileInput.click());
-  if (btnCam && fileInput) btnCam.addEventListener('click',()=>fileInput.click());
 
-  // Streaming via WebSocket (1 fps para ahorrar recursos)
   const container = document.querySelector('.dash-video');
-  if (!container) return;
-  const videoEl = document.createElement('video');
-  videoEl.autoplay = true; videoEl.muted = true; videoEl.playsInline = true; videoEl.style.maxWidth='100%';
-  const overlay = document.createElement('canvas'); overlay.style.position='absolute'; overlay.style.top='0'; overlay.style.left='0'; overlay.style.pointerEvents='none';
-  container.style.position='relative';
-  container.innerHTML=''; container.appendChild(videoEl); container.appendChild(overlay);
+  let started = false, ws, sendCanvas, ctx, videoEl, overlay;
 
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({video:true, audio:false});
-    videoEl.srcObject = stream;
-    const ws = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/ws/stream');
-    const sendCanvas = document.createElement('canvas');
-    const ctx = sendCanvas.getContext('2d');
+  async function startStreaming(){
+    if (started) return; started = true;
+    container.innerHTML = '<p class="dash-video__placeholder">Inicializando cámara...</p>';
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({video:true, audio:false});
+      // UI
+      container.style.position='relative';
+      container.innerHTML='';
+      videoEl = document.createElement('video');
+      videoEl.autoplay = true; videoEl.muted = true; videoEl.playsInline = true; videoEl.style.maxWidth='100%';
+      overlay = document.createElement('canvas'); overlay.style.position='absolute'; overlay.style.top='0'; overlay.style.left='0'; overlay.style.pointerEvents='none';
+      container.appendChild(videoEl); container.appendChild(overlay);
+      videoEl.srcObject = stream;
 
-    function drawDetections(items, srcW, srcH){
-      const rect = videoEl.getBoundingClientRect();
-      overlay.width = rect.width; overlay.height = rect.height;
-      const o = overlay.getContext('2d'); o.clearRect(0,0,overlay.width,overlay.height);
-      const sx = overlay.width / srcW; const sy = overlay.height / srcH;
-      o.strokeStyle = '#20E3B2'; o.lineWidth = 2; o.font='12px Inter'; o.fillStyle='#20E3B2';
-      (items||[]).forEach(d=>{ const [x1,y1,x2,y2]=d.box; o.strokeRect(x1*sx,y1*sy,(x2-x1)*sx,(y2-y1)*sy); o.fillText(`${d.label} ${(d.conf||0).toFixed(2)}`, x1*sx+2, y1*sy+12); });
-    }
+      // WS + envío
+      ws = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/ws/stream');
+      sendCanvas = document.createElement('canvas');
+      ctx = sendCanvas.getContext('2d');
 
-    ws.onopen = () => {
-      const sendFrame = () => {
-        if (!videoEl.videoWidth) return;
-        const targetW = 416; const targetH = Math.round(videoEl.videoHeight * (targetW / videoEl.videoWidth));
-        sendCanvas.width = targetW; sendCanvas.height = targetH; ctx.drawImage(videoEl,0,0,targetW,targetH);
-        const dataUrl = sendCanvas.toDataURL('image/jpeg', 0.6);
-        ws.send(JSON.stringify({type:'frame', data:dataUrl, ts:Date.now(), w:targetW, h:targetH}));
+      function draw(items, srcW, srcH){
+        const rect = videoEl.getBoundingClientRect();
+        overlay.width = rect.width; overlay.height = rect.height;
+        const o = overlay.getContext('2d'); o.clearRect(0,0,overlay.width,overlay.height);
+        const sx = overlay.width / srcW; const sy = overlay.height / srcH;
+        o.strokeStyle = '#20E3B2'; o.lineWidth = 2; o.font='12px Inter'; o.fillStyle='#20E3B2';
+        (items||[]).forEach(d=>{ const [x1,y1,x2,y2]=d.box||[0,0,0,0]; o.strokeRect(x1*sx,y1*sy,(x2-x1)*sx,(y2-y1)*sy); o.fillText(`${d.label||''} ${(d.conf||0).toFixed(2)}`, x1*sx+2, y1*sy+12); });
+      }
+
+      ws.onopen = () => {
+        const tick = () => {
+          if (!videoEl || !videoEl.videoWidth) return;
+          const targetW = 416; const targetH = Math.round(videoEl.videoHeight * (targetW / videoEl.videoWidth));
+          sendCanvas.width = targetW; sendCanvas.height = targetH; ctx.drawImage(videoEl,0,0,targetW,targetH);
+          const dataUrl = sendCanvas.toDataURL('image/jpeg', 0.6);
+          ws.send(JSON.stringify({type:'frame', data:dataUrl, ts:Date.now(), w:targetW, h:targetH}));
+        };
+        setInterval(tick, 1000);
       };
-      setInterval(sendFrame, 1000);
-    };
-    ws.onmessage = (ev) => {
-      try {
-        const msg = JSON.parse(ev.data);
-        if (msg.type==='detections') { drawDetections(msg.items||[], sendCanvas.width||416, sendCanvas.height||234); }
-      } catch {}
-    };
-  } catch(e) { console.warn('getUserMedia no disponible:', e); }
+      ws.onmessage = (ev) => {
+        try { const msg = JSON.parse(ev.data); if (msg.type==='detections') draw(msg.items||[], sendCanvas.width||416, sendCanvas.height||234); } catch {}
+      };
+      ws.onerror = () => { console.warn('WS error'); };
+      ws.onclose = () => { console.warn('WS closed'); };
+    } catch(e) {
+      container.innerHTML = '<p class="dash-video__placeholder">No se pudo acceder a la cámara.</p>';
+      console.warn('getUserMedia error:', e);
+      started = false;
+    }
+  }
+
+  if (btnCam) btnCam.addEventListener('click', startStreaming);
 })();
 </script>
 {% endblock %}
