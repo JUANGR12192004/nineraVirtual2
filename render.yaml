@@ -23,6 +23,12 @@ services:
         value: /data/media
       - key: LEGACY_DB_PATH
         value: /data/ninera_virtual.db
+      - key: USE_PRIMARY
+        value: "1"
+      - key: USE_COCO
+        value: "0"
+      - key: STREAM_IMG_W
+        value: "416"
     disk:
       name: data
       mountPath: /data

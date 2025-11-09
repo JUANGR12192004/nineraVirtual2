@@ -1,8 +1,10 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import base64
 import json
 from typing import List
+import os
+import logging
 
 import cv2
 import numpy as np
@@ -10,7 +12,7 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 
 try:
     from ultralytics import YOLO  # type: ignore
-except Exception:  # pragma: no cover - si no está disponible mantenemos streaming sin inferencia
+except Exception:  # pragma: no cover - si no estÃ¡ disponible mantenemos streaming sin inferencia
     YOLO = None  # type: ignore
 
 from ml_models import get_model_path
@@ -21,22 +23,29 @@ class StreamConsumer(AsyncWebsocketConsumer):
         self.model_custom = None
         self.model_coco = None
         await self.accept()
+        # Flags de entorno: permiten activar/desactivar modelos y ajustar tamaño
+        self.use_primary = os.getenv("USE_PRIMARY", "1").lower() in {"1", "true", "yes"}
+        self.use_coco = os.getenv("USE_COCO", "0").lower() in {"1", "true", "yes"}
+        self.target_w = int(os.getenv("STREAM_IMG_W", "416"))
         await self.send_json({"type": "ready", "message": "stream accepted"})
 
     def _lazy_models(self):
         if YOLO is None:
             return None, None
-        if self.model_custom is None:
+        if self.use_primary and self.model_custom is None:
             try:
                 self.model_custom = YOLO(str(get_model_path("NiñeraV.pt")))
             except Exception:
                 # Intentar con variantes de nombre
                 self.model_custom = YOLO(str(get_model_path("ninera.pt")))
-        if self.model_coco is None:
+            logging.info("[stream] Modelo primary cargado")
+        if self.use_coco and self.model_coco is None:
             try:
                 self.model_coco = YOLO(str(get_model_path("yolov8s.pt")))
             except Exception:
                 self.model_coco = None
+            else:
+                logging.info("[stream] Modelo coco cargado")
         return self.model_custom, self.model_coco
 
     @staticmethod
@@ -67,7 +76,7 @@ class StreamConsumer(AsyncWebsocketConsumer):
             frame = self._decode_frame(data.get("data", ""))
             if frame is None:
                 return
-            frame = self._resize(frame, 416)
+            frame = self._resize(frame, self.target_w)
 
             det_items: List[dict] = []
             model_custom, model_coco = self._lazy_models()
@@ -87,18 +96,18 @@ class StreamConsumer(AsyncWebsocketConsumer):
                     label = str(names.get(cls, src)).lower()
                     det_items.append({"label": label, "box": xyxy, "conf": conf, "src": src})
 
-            if model_custom is not None:
+            if self.use_primary and model_custom is not None:
                 try:
                     res_c = model_custom.predict(source=frame, imgsz=416, conf=0.35, iou=0.45, device="cpu", verbose=False)
                     _fmt_results(res_c, "custom")
                 except Exception:
-                    pass
-            if model_coco is not None:
+                    logging.exception("[stream] error en primary")
+            if self.use_coco and model_coco is not None:
                 try:
                     res_y = model_coco.predict(source=frame, imgsz=416, conf=0.25, iou=0.45, device="cpu", verbose=False)
                     _fmt_results(res_y, "coco")
                 except Exception:
-                    pass
+                    logging.exception("[stream] error en coco")
 
             await self.send_json({"type": "detections", "items": det_items, "ts": data.get("ts")})
         except Exception as exc:  # pragma: no cover
@@ -106,3 +115,4 @@ class StreamConsumer(AsyncWebsocketConsumer):
 
     async def send_json(self, payload):
         await self.send(text_data=json.dumps(payload))
+
