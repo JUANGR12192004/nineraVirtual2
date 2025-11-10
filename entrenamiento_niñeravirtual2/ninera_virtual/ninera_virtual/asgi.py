@@ -4,6 +4,8 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "ninera_virtual.settings")
 
 try:
     from channels.routing import ProtocolTypeRouter, URLRouter
+    from channels.auth import AuthMiddlewareStack
+    from channels.security.websocket import AllowedHostsOriginValidator
     from django.core.asgi import get_asgi_application
     from .routing import websocket_urlpatterns
 
@@ -11,7 +13,10 @@ try:
     application = ProtocolTypeRouter(
         {
             "http": django_asgi_app,
-            "websocket": URLRouter(websocket_urlpatterns),
+            # Valida Host en el handshake y aplica sesiones/cookies
+            "websocket": AllowedHostsOriginValidator(
+                AuthMiddlewareStack(URLRouter(websocket_urlpatterns))
+            ),
         }
     )
 except Exception:

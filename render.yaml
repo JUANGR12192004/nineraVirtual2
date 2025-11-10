@@ -17,7 +17,9 @@ services:
       - key: DJANGO_DEBUG
         value: "0"
       - key: DJANGO_ALLOWED_HOSTS
-        value: your-service.onrender.com
+        value: nineravirtual2.onrender.com
+      - key: RENDER_EXTERNAL_URL
+        value: https://nineravirtual2.onrender.com
       # Forzar detecciones COCO por CPU
       - key: USE_COCO
         value: "1"
@@ -30,4 +32,3 @@ services:
         sync: false
       - key: TELEGRAM_CHAT_ID
         sync: false
-
