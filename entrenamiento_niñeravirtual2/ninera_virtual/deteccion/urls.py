@@ -10,4 +10,5 @@ urlpatterns = [
     path("register/", web_views.web_register, name="web_register"),
     path("logout/", web_views.web_logout, name="web_logout"),
     path("procesar/", views.upload_view, name="upload"),
+    path("alerts/export.csv", web_views.export_alerts_csv, name="export_alerts_csv"),
 ]

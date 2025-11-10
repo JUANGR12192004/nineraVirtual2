@@ -6,10 +6,11 @@ from typing import Dict, List
 from django.contrib import messages
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
+from django.http import StreamingHttpResponse
 
 from .forms import UploadForm, WebLoginForm, WebRegisterForm
 from .legacy.config import DatabaseConnection, UserRepository
-from .models import InferenceResult
+from .models import InferenceResult, StreamAlert
 
 
 SESSION_KEY = "legacy_user"
@@ -82,6 +83,20 @@ def web_logout(request: HttpRequest) -> HttpResponse:
     return redirect("deteccion:web_login")
 
 
+def export_alerts_csv(request: HttpRequest) -> HttpResponse:
+    """Exporta alertas de streaming a CSV sin bloquear (streaming)."""
+    def rows():
+        yield "timestamp,alerta\n"
+        for a in StreamAlert.objects.order_by("-created_at").iterator():
+            # Escapar comas y saltos de línea simples
+            text = (a.text or "").replace("\n", " ").replace(",", ";")
+            yield f"{a.created_at:%Y-%m-%d %H:%M:%S},{text}\n"
+
+    resp = StreamingHttpResponse(rows(), content_type="text/csv; charset=utf-8")
+    resp["Content-Disposition"] = 'attachment; filename="alertas_streaming.csv"'
+    return resp
+
+
 @dataclass
 class MetricCounters:
     total: int = 0
@@ -124,16 +139,48 @@ def _build_metrics(results: List[InferenceResult]) -> MetricCounters:
     return counters
 
 
+def _build_metrics_from_alerts(alerts: List[StreamAlert]) -> MetricCounters:
+    counters = MetricCounters()
+    for a in alerts:
+        text = (a.text or "").lower()
+        # Heurística simple por palabras clave
+        if not text:
+            continue
+        # contar por clases conocidas
+        for token in [
+            "knife",
+            "cuchillo",
+            "kitchen",
+            "cocina",
+            "cooker",
+            "stove",
+            "horno",
+            "oven",
+            "pot",
+            "olla",
+            "stairs",
+            "escalera",
+            "scissors",
+            "tijera",
+        ]:
+            if token in text:
+                counters.bump(token)
+        counters.total += 1
+    return counters
+
+
 def web_dashboard(request: HttpRequest) -> HttpResponse:
     user = _user_from_session(request)
     if not user:
         return redirect("deteccion:web_login")
 
-    recent_results = InferenceResult.objects.order_by("-uploaded_at")[:5]
-    metrics = _build_metrics(recent_results)
+    recent_alerts = list(StreamAlert.objects.order_by("-created_at")[:12])
+    recent_results = InferenceResult.objects.order_by("-uploaded_at")[:3]
+    # Métricas a partir de alertas persistidas (stream)
+    metrics = _build_metrics_from_alerts(recent_alerts)
     context = {
         "user": user,
-        "alerts": recent_results,
+        "alerts": recent_alerts or recent_results,
         "metrics": metrics,
         "upload_form": UploadForm(),
     }

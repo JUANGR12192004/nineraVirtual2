@@ -31,3 +31,21 @@ class InferenceResult(models.Model):
 
     def __str__(self) -> str:
         return f"Inferencia {self.pk} - {self.get_status_display()}"
+
+
+class StreamAlert(models.Model):
+    """Alerta generada desde el streaming en tiempo real.
+
+    Guarda solo texto y timestamp para mantenerlo ligero en Render Free.
+    """
+
+    text = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "Alerta de streaming"
+        verbose_name_plural = "Alertas de streaming"
+
+    def __str__(self) -> str:  # pragma: no cover - presentacional
+        return f"{self.created_at:%Y-%m-%d %H:%M:%S} · {self.text[:48]}"

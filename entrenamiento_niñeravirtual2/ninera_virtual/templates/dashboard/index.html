@@ -72,18 +72,18 @@
         <section class="dash-panel">
             <h3>Métricas</h3>
             <div class="dash-metrics">
-                <div class="dash-metric"><span>📋Total</span><strong>{{ metrics.total }}</strong></div>
-                <div class="dash-metric"><span>🔪Cuchillo</span><strong>{{ metrics.knife }}</strong></div>
-                <div class="dash-metric"><span>🪜Escaleras</span><strong>{{ metrics.stairs }}</strong></div>
-                <div class="dash-metric"><span>🔥Estufa</span><strong>{{ metrics.stove }}</strong></div>
-                <div class="dash-metric"><span>🍲Olla</span><strong>{{ metrics.pot }}</strong></div>
-                <div class="dash-metric"><span>📍Zonas</span><strong>{{ metrics.zone }}</strong></div>
-                <div class="dash-metric"><span>⬆️Altura</span><strong>{{ metrics.high }}</strong></div>
-                <div class="dash-metric"><span>✂️Tijeras</span><strong>{{ metrics.scissors }}</strong></div>
+                <div class="dash-metric"><span>📋Total</span><strong><strong id="m_total">{{ metrics.total }}</strong></strong></div>
+                <div class="dash-metric"><span>🔪Cuchillo</span><strong><strong id="m_knife">{{ metrics.knife }}</strong></strong></div>
+                <div class="dash-metric"><span>🪜Escaleras</span><strong><strong id="m_stairs">{{ metrics.stairs }}</strong></strong></div>
+                <div class="dash-metric"><span>🔥Estufa</span><strong><strong id="m_stove">{{ metrics.stove }}</strong></strong></div>
+                <div class="dash-metric"><span>🍲Olla</span><strong><strong id="m_pot">{{ metrics.pot }}</strong></strong></div>
+                <div class="dash-metric"><span>📍Zonas</span><strong><strong id="m_zone">{{ metrics.zone }}</strong></strong></div>
+                <div class="dash-metric"><span>⬆️Altura</span><strong><strong id="m_high">{{ metrics.high }}</strong></strong></div>
+                <div class="dash-metric"><span>✂️Tijeras</span><strong><strong id="m_scissors">{{ metrics.scissors }}</strong></strong></div>
             </div>
         </section>
         <section class="dash-panel">
-            <button class="dash-btn dash-btn--full" type="button" disabled title="Próximamente">⏳ Exportar historial CSV</button>
+            <a class="dash-btn dash-btn--full" href="{% url 'deteccion:export_alerts_csv' %}" target="_blank" rel="noopener">⬇️ Exportar historial CSV</a>
         </section>
     </aside>
 </section>
@@ -141,7 +141,27 @@
         setInterval(tick, 1000);
       };
       ws.onmessage = (ev) => {
-        try { const msg = JSON.parse(ev.data); if (msg.type==='detections') draw(msg.items||[], sendCanvas.width||416, sendCanvas.height||234); } catch {}
+        try {
+          const msg = JSON.parse(ev.data);
+          if (msg.type==='detections') {
+            const items = msg.items||[]; draw(items, sendCanvas.width||416, sendCanvas.height||234);
+            // métricas rápidas y alerta textual, usando 'over' del servidor (umbrales por clase)
+            const banner = document.querySelector('.dash-status');
+            const alertsBox = document.querySelector('.dash-list--alerts');
+            const over = (msg.over && Array.isArray(msg.over)) ? msg.over : items;
+            if (over.length && alertsBox) {
+              const ts = new Date().toLocaleTimeString();
+              const text = over.map(d=>`[${d.src}] ${d.label} ${d.conf.toFixed(2)}`).join(' · ');
+              const art = document.createElement('article');
+              art.className='dash-alert';
+              art.innerHTML = `<header><h4>Procesado</h4><span>${ts}</span></header><p>${text}</p>`;
+              alertsBox.prepend(art);
+              while (alertsBox.children.length>8) alertsBox.removeChild(alertsBox.lastChild);
+              if (banner){ banner.textContent = text; banner.style.background = '#DC2626'; banner.style.color = '#fff'; setTimeout(()=>{ banner.textContent='Sistema listo.'; banner.style.background=''; banner.style.color=''; }, 3500); }
+              bumpMetrics(over);
+            }
+          }
+        } catch {}
       };
       ws.onerror = () => { console.warn('WS error'); };
       ws.onclose = () => { console.warn('WS closed'); };
@@ -186,6 +206,24 @@
     });
   }
 
+  function bumpMetrics(items){
+    const map = {
+      knife: ['knife','cuchillo'],
+      stove: ['kitchen','cocina','cooker','stove','horno','oven'],
+      pot: ['pot','olla'],
+      stairs: ['stairs','escalera'],
+      scissors: ['scissors','tijera'],
+    };
+    const inc = {total:0, knife:0, stove:0, pot:0, stairs:0, scissors:0};
+    items.forEach(d=>{
+      const lbl=(d.label||'').toLowerCase();
+      inc.total++;
+      for (const k in map){ if (map[k].some(t=>lbl.includes(t))) inc[k]++; }
+    });
+    const add = (id,v)=>{ const el=document.getElementById(id); if(el){ const n=parseInt(el.textContent||'0',10)||0; el.textContent=String(n+v); } };
+    add('m_total', inc.total); add('m_knife', inc.knife); add('m_stove', inc.stove); add('m_pot', inc.pot); add('m_stairs', inc.stairs); add('m_scissors', inc.scissors);
+  }
+
   function startLocalVideo(file){
     cleanup();
     // UI
@@ -212,7 +250,28 @@
         try { ws && ws.readyState === 1 && ws.send(JSON.stringify({type:'frame', data:dataUrl, ts:Date.now(), w:targetW, h:targetH})); } catch {}
       }, 300);
     };
-    ws.onmessage = (ev)=>{ try{ const m=JSON.parse(ev.data); if(m.type==='detections') draw(m.items||[], sendCanvas.width||416, sendCanvas.height||234); }catch{} };
+        ws.onmessage = (ev)=>{
+      try{
+        const m=JSON.parse(ev.data);
+        if(m.type==='detections'){
+          const items=m.items||[]; draw(items, sendCanvas.width||416, sendCanvas.height||234);
+          const alertsBox=document.querySelector('.dash-list--alerts');
+          const banner=document.querySelector('.dash-status');
+          const over = (m.over && Array.isArray(m.over)) ? m.over : items;
+          if(over.length && alertsBox){
+            const ts = new Date().toLocaleTimeString();
+            const text = over.map(d=>`[${d.src}] ${d.label} ${d.conf.toFixed(2)}`).join(' · ');
+            const art = document.createElement('article');
+            art.className='dash-alert';
+            art.innerHTML = `<header><h4>Procesado</h4><span>${ts}</span></header><p>${text}</p>`;
+            alertsBox.prepend(art);
+            while (alertsBox.children.length>8) alertsBox.removeChild(alertsBox.lastChild);
+            if (banner){ banner.textContent = text; banner.style.background = '#DC2626'; banner.style.color = '#fff'; setTimeout(()=>{ banner.textContent='Sistema listo.'; banner.style.background=''; banner.style.color=''; }, 3500); }
+            bumpMetrics(over);
+          }
+        }
+      }catch{}
+    };
     ws.onerror = ()=>{ console.warn('WS error'); };
     ws.onclose = ()=>{ console.warn('WS closed'); };
   }
@@ -236,5 +295,8 @@
 })();
 </script>
 {% endblock %}
+
+
+
 
 

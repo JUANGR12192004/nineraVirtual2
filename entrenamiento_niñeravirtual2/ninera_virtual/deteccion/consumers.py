@@ -16,6 +16,8 @@ except Exception:  # pragma: no cover - si no estÃ¡ disponible mantenemos stre
     YOLO = None  # type: ignore
 
 from ml_models import get_model_path
+from .legacy.config import Config
+from .models import StreamAlert
 
 
 class StreamConsumer(AsyncWebsocketConsumer):
@@ -27,6 +29,9 @@ class StreamConsumer(AsyncWebsocketConsumer):
         self.use_primary = os.getenv("USE_PRIMARY", "1").lower() in {"1", "true", "yes"}
         self.use_coco = os.getenv("USE_COCO", "0").lower() in {"1", "true", "yes"}
         self.target_w = int(os.getenv("STREAM_IMG_W", "416"))
+        self.conf_primary = float(os.getenv("YOLO_CONF_PRIMARY", "0.35"))
+        self.conf_coco = float(os.getenv("YOLO_CONF_COCO", "0.25"))
+        self.coco_model_file = os.getenv("COCO_MODEL_FILE", "yolov8n.pt")
         await self.send_json({"type": "ready", "message": "stream accepted"})
 
     def _lazy_models(self):
@@ -41,7 +46,7 @@ class StreamConsumer(AsyncWebsocketConsumer):
             logging.info("[stream] Modelo primary cargado")
         if self.use_coco and self.model_coco is None:
             try:
-                self.model_coco = YOLO(str(get_model_path("yolov8s.pt")))
+                self.model_coco = YOLO(str(get_model_path(self.coco_model_file)))
             except Exception:
                 self.model_coco = None
             else:
@@ -98,18 +103,33 @@ class StreamConsumer(AsyncWebsocketConsumer):
 
             if self.use_primary and model_custom is not None:
                 try:
-                    res_c = model_custom.predict(source=frame, imgsz=416, conf=0.35, iou=0.45, device="cpu", verbose=False)
+                    res_c = model_custom.predict(source=frame, imgsz=self.target_w, conf=self.conf_primary, iou=0.45, device="cpu", verbose=False, max_det=50)
                     _fmt_results(res_c, "custom")
                 except Exception:
                     logging.exception("[stream] error en primary")
             if self.use_coco and model_coco is not None:
                 try:
-                    res_y = model_coco.predict(source=frame, imgsz=416, conf=0.25, iou=0.45, device="cpu", verbose=False)
+                    res_y = model_coco.predict(source=frame, imgsz=self.target_w, conf=self.conf_coco, iou=0.45, device="cpu", verbose=False, max_det=50)
                     _fmt_results(res_y, "coco")
                 except Exception:
                     logging.exception("[stream] error en coco")
 
-            await self.send_json({"type": "detections", "items": det_items, "ts": data.get("ts")})
+            # Determinar items sobre umbral por CLASE (idéntico a escritorio)
+            def threshold_for(label: str) -> float:
+                l = (label or "").lower()
+                return Config.CLASS_THRESHOLDS.get(l, self.conf_coco)
+
+            over = [d for d in det_items if d.get("conf", 0.0) >= threshold_for(str(d.get("label", "")))]
+
+            # Persistir alerta ligera si hubo detecciones significativas
+            if over:
+                try:
+                    text = " · ".join([f"[{d.get('src')}] {d.get('label')} {d.get('conf'):.2f}" for d in over])
+                    StreamAlert.objects.create(text=text)
+                except Exception:
+                    logging.exception("[stream] persist alert failed")
+
+            await self.send_json({"type": "detections", "items": det_items, "over": over, "ts": data.get("ts")})
         except Exception as exc:  # pragma: no cover
             await self.send_json({"type": "error", "message": str(exc)})
 

@@ -27,6 +27,12 @@ services:
         value: "0"
       - key: STREAM_IMG_W
         value: "320"
+      - key: COCO_MODEL_FILE
+        value: yolov8s.pt
+      - key: YOLO_CONF_COCO
+        value: "0.25"
+      - key: YOLO_CONF_PRIMARY
+        value: "0.35"
       # Telegram (opcional, agregar en panel o secrets)
       - key: TELEGRAM_BOT_TOKEN
         sync: false
