@@ -8,14 +8,15 @@ from channels.routing import ProtocolTypeRouter, URLRouter
 from channels.auth import AuthMiddlewareStack
 from channels.security.websocket import AllowedHostsOriginValidator
 
-# Importar rutas de WS de forma tolerante; si fallan, usar lista vacía sin romper ASGI
+# Inicializar Django primero para que el registry de apps esté listo
+django_asgi_app = get_asgi_application()
+
+# Importar rutas de WS después de inicializar Django; si fallan, usar lista vacía
 try:
     from .routing import websocket_urlpatterns  # type: ignore
 except Exception:
     logging.exception("[asgi] No se pudieron importar rutas WS; usando lista vacía")
     websocket_urlpatterns = []  # type: ignore
-
-django_asgi_app = get_asgi_application()
 
 application = ProtocolTypeRouter(
     {
