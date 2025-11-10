@@ -12,6 +12,11 @@ services:
       daphne -b 0.0.0.0 -p $PORT ninera_virtual.asgi:application
     autoDeploy: true
     envVars:
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: ninera-redis
+          property: connectionString
       - key: PYTHON_VERSION
         value: 3.12.5
       - key: DJANGO_SETTINGS_MODULE
@@ -19,7 +24,7 @@ services:
       - key: DJANGO_DEBUG
         value: "0"
       - key: DJANGO_ALLOWED_HOSTS
-        value: nineravirtual2.onrender.com
+        value: "*"
       - key: RENDER_EXTERNAL_URL
         value: https://nineravirtual2.onrender.com
       # Forzar detecciones COCO por CPU
@@ -40,3 +45,8 @@ services:
         sync: false
       - key: TELEGRAM_CHAT_ID
         sync: false
+
+  - type: redis
+    name: ninera-redis
+    plan: free
+    ipAllowList: []

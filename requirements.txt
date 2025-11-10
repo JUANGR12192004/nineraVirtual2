@@ -3,6 +3,7 @@
 # Framework
 Django>=4.2,<5.0
 channels[daphne]>=4.0,<5.0
+channels-redis>=4.2,<5.0
 whitenoise>=6.6
 
 # DB / config
@@ -18,4 +19,3 @@ opencv-python-headless>=4.8
 # Utils
 requests>=2.31
 waitress>=3.0
-

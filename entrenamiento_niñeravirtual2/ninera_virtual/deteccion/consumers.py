@@ -9,6 +9,7 @@ import logging
 import cv2
 import numpy as np
 from channels.generic.websocket import AsyncWebsocketConsumer
+from channels.db import database_sync_to_async
 
 try:
     from ultralytics import YOLO  # type: ignore
@@ -125,7 +126,7 @@ class StreamConsumer(AsyncWebsocketConsumer):
             if over:
                 try:
                     text = " · ".join([f"[{d.get('src')}] {d.get('label')} {d.get('conf'):.2f}" for d in over])
-                    StreamAlert.objects.create(text=text)
+                    await self._create_stream_alert(text)
                 except Exception:
                     logging.exception("[stream] persist alert failed")
 
@@ -135,4 +136,8 @@ class StreamConsumer(AsyncWebsocketConsumer):
 
     async def send_json(self, payload):
         await self.send(text_data=json.dumps(payload))
+
+    @database_sync_to_async
+    def _create_stream_alert(self, text: str):
+        return StreamAlert.objects.create(text=text)
 

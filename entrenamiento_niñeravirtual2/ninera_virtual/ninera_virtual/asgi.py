@@ -6,7 +6,6 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "ninera_virtual.settings")
 from django.core.asgi import get_asgi_application
 from channels.routing import ProtocolTypeRouter, URLRouter
 from channels.auth import AuthMiddlewareStack
-from channels.security.websocket import AllowedHostsOriginValidator
 
 # Inicializar Django primero para que el registry de apps esté listo
 django_asgi_app = get_asgi_application()
@@ -21,8 +20,8 @@ except Exception:
 application = ProtocolTypeRouter(
     {
         "http": django_asgi_app,
-        "websocket": AllowedHostsOriginValidator(
-            AuthMiddlewareStack(URLRouter(websocket_urlpatterns))
-        ),
+        # Relajamos validación de origen para estabilizar WS en Render Free.
+        # ALLOWED_HOSTS sigue aplicando a HTTP.
+        "websocket": AuthMiddlewareStack(URLRouter(websocket_urlpatterns)),
     }
 )

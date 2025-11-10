@@ -79,9 +79,18 @@ WSGI_APPLICATION = "ninera_virtual.wsgi.application"
 ASGI_APPLICATION = "ninera_virtual.asgi.application"
 
 # Channels – in-memory layer (válido con un solo worker)
-CHANNEL_LAYERS = {
-    "default": {"BACKEND": "channels.layers.InMemoryChannelLayer"}
-}
+_redis_url = os.getenv("REDIS_URL", "").strip()
+if _redis_url:
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels_redis.core.RedisChannelLayer",
+            "CONFIG": {"hosts": [_redis_url]},
+        }
+    }
+else:
+    CHANNEL_LAYERS = {
+        "default": {"BACKEND": "channels.layers.InMemoryChannelLayer"}
+    }
 
 # Default DB: prefer DATABASE_URL (e.g., Postgres). If not provided, use
 # a SQLite file on the persistent disk (/data) to survive restarts.
