@@ -7,7 +7,9 @@ services:
       pip install --upgrade pip
       pip install -r requirements.txt
       python ninera_virtual/manage.py collectstatic --noinput
-    startCommand: daphne -b 0.0.0.0 -p $PORT ninera_virtual.asgi:application
+    startCommand: |
+      python ninera_virtual/manage.py migrate --noinput
+      daphne -b 0.0.0.0 -p $PORT ninera_virtual.asgi:application
     autoDeploy: true
     envVars:
       - key: PYTHON_VERSION

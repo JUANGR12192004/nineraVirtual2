@@ -3,10 +3,17 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("deteccion", "0002_add_output_text"),
+        ("deteccion", "0001_initial"),
     ]
 
     operations = [
+        # Asegura el nuevo campo en InferenceResult incluso si no existe 0002_add_output_text
+        migrations.AddField(
+            model_name="inferenceresult",
+            name="output_text",
+            field=models.TextField(blank=True, default=""),
+            preserve_default=False,
+        ),
         migrations.CreateModel(
             name="StreamAlert",
             fields=[
