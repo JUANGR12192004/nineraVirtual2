@@ -1,38 +1,33 @@
 services:
   - type: web
     name: ninera-virtual
-    plan: starter
-    env: docker
-    dockerfilePath: ./Dockerfile
-    healthCheckPath: /
-    postDeployCommand: python entrenamiento_niñeravirtual2/ninera_virtual/manage.py migrate --noinput
+    env: python
+    plan: free
+    buildCommand: |
+      pip install --upgrade pip
+      pip install -r requirements.txt
+      python ninera_virtual/manage.py collectstatic --noinput
+    startCommand: daphne -b 0.0.0.0 -p $PORT ninera_virtual.asgi:application
+    autoDeploy: true
     envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.5
+      - key: DJANGO_SETTINGS_MODULE
+        value: ninera_virtual.settings
       - key: DJANGO_DEBUG
-        value: "False"
-      - key: DJANGO_SECRET_KEY
-        generateValue: true
-      - key: DJANGO_SQLITE_PATH
-        value: /data/django.sqlite3
-      - key: DATABASE_URL
-        fromDatabase:
-          name: ninera-virtual-db
-          property: connectionString
-      - key: WEB_CONCURRENCY
-        value: "1"
-      - key: MEDIA_ROOT
-        value: /data/media
-      - key: LEGACY_DB_PATH
-        value: /data/ninera_virtual.db
-      - key: USE_PRIMARY
-        value: "1"
+        value: "0"
+      - key: DJANGO_ALLOWED_HOSTS
+        value: your-service.onrender.com
+      # Forzar detecciones COCO por CPU
       - key: USE_COCO
+        value: "1"
+      - key: USE_PRIMARY
         value: "0"
       - key: STREAM_IMG_W
-        value: "416"
-    disk:
-      name: data
-      mountPath: /data
-      sizeGB: 5
-databases:
-  - name: ninera-virtual-db
-    plan: free
+        value: "320"
+      # Telegram (opcional, agregar en panel o secrets)
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: TELEGRAM_CHAT_ID
+        sync: false
+

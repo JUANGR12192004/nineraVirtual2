@@ -1,0 +1,21 @@
+--extra-index-url https://download.pytorch.org/whl/cpu
+
+# Framework
+Django>=4.2,<5.0
+channels[daphne]>=4.0,<5.0
+whitenoise>=6.6
+
+# DB / config
+dj-database-url>=2.1
+psycopg[binary]>=3.1
+python-dotenv>=1.0
+
+# Inference stack (CPU only)
+torch>=2.1
+ultralytics>=8.0
+opencv-python-headless>=4.8
+
+# Utils
+requests>=2.31
+waitress>=3.0
+

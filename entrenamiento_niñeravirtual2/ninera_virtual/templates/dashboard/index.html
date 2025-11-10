@@ -155,4 +155,86 @@
   if (btnCam) btnCam.addEventListener('click', startStreaming);
 })();
 </script>
+<script>
+(function(){
+  // Soporte para reproducir un archivo de VIDEO local en el mismo área
+  // y enviar frames por WebSocket igual que la cámara.
+  const fileInput = document.getElementById('upload_file_input');
+  const container = document.querySelector('.dash-video');
+  if (!fileInput || !container) return;
+
+  let ws, sendCanvas, ctx, videoEl, overlay, pushTimer;
+
+  function cleanup(){
+    if (pushTimer) { try{ clearInterval(pushTimer); }catch{} pushTimer=null; }
+    try { if (ws && ws.readyState <= 1) ws.close(); } catch {}
+    try { if (videoEl) { videoEl.pause(); if (videoEl.src && videoEl.src.startsWith('blob:')) URL.revokeObjectURL(videoEl.src); } } catch {}
+  }
+
+  function draw(items, srcW, srcH){
+    if (!overlay || !videoEl) return;
+    const rect = videoEl.getBoundingClientRect();
+    overlay.width = rect.width; overlay.height = rect.height;
+    const o = overlay.getContext('2d'); o.clearRect(0,0,overlay.width,overlay.height);
+    const sx = overlay.width / (srcW||1); const sy = overlay.height / (srcH||1);
+    const colorFor = (src)=> src==='custom' ? '#20E3B2' : '#F59E0B';
+    o.lineWidth = 2; o.font='12px Inter';
+    (items||[]).forEach(d=>{
+      const b=d.box||[0,0,0,0]; const c=colorFor(d.src); o.strokeStyle=c; o.fillStyle=c;
+      o.strokeRect(b[0]*sx,b[1]*sy,(b[2]-b[0])*sx,(b[3]-b[1])*sy);
+      o.fillText(`${d.label||''} ${(d.conf||0).toFixed(2)}`,(b[0]*sx)+2,(b[1]*sy)+12);
+    });
+  }
+
+  function startLocalVideo(file){
+    cleanup();
+    // UI
+    container.style.position='relative';
+    container.innerHTML='';
+    videoEl = document.createElement('video');
+    videoEl.autoplay = true; videoEl.muted = true; videoEl.playsInline = true; videoEl.style.maxWidth='100%';
+    overlay = document.createElement('canvas'); overlay.style.position='absolute'; overlay.style.top='0'; overlay.style.left='0'; overlay.style.pointerEvents='none';
+    container.appendChild(videoEl); container.appendChild(overlay);
+    videoEl.src = URL.createObjectURL(file);
+    videoEl.play().catch(()=>{});
+
+    // WS + envío periódico
+    ws = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/ws/stream');
+    sendCanvas = document.createElement('canvas');
+    ctx = sendCanvas.getContext('2d');
+    ws.onopen = () => {
+      pushTimer = setInterval(()=>{
+        if (!videoEl || !videoEl.videoWidth) return;
+        const targetW = 416; const targetH = Math.round(videoEl.videoHeight * (targetW / videoEl.videoWidth));
+        sendCanvas.width = targetW; sendCanvas.height = targetH;
+        ctx.drawImage(videoEl,0,0,targetW,targetH);
+        const dataUrl = sendCanvas.toDataURL('image/jpeg', 0.6);
+        try { ws && ws.readyState === 1 && ws.send(JSON.stringify({type:'frame', data:dataUrl, ts:Date.now(), w:targetW, h:targetH})); } catch {}
+      }, 300);
+    };
+    ws.onmessage = (ev)=>{ try{ const m=JSON.parse(ev.data); if(m.type==='detections') draw(m.items||[], sendCanvas.width||416, sendCanvas.height||234); }catch{} };
+    ws.onerror = ()=>{ console.warn('WS error'); };
+    ws.onclose = ()=>{ console.warn('WS closed'); };
+  }
+
+  fileInput.addEventListener('change', (e)=>{
+    const f = e.target.files && e.target.files[0];
+    if (!f) return;
+    if (!/^video\//.test(f.type)) return; // solo reproducir si es video
+    startLocalVideo(f);
+  });
+})();
+</script>
+<script>
+(function(){
+  const stopBtn = document.querySelector('.dash-sidebar .dash-panel .dash-actions .dash-btn--danger');
+  if (!stopBtn) return;
+  stopBtn.addEventListener('click', function(){
+    try { window.stop && window.stop(); } catch(e) {}
+    location.reload();
+  });
+})();
+</script>
 {% endblock %}
+
+
