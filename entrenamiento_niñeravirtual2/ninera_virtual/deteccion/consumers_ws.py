@@ -19,6 +19,7 @@ except Exception:  # pragma: no cover
 
 from ml_models import get_model_path
 from .legacy.config import Config
+from .legacy.notifications import NotificationMediator
 from .models import StreamAlert
 
 
@@ -29,9 +30,11 @@ class StreamConsumer(AsyncWebsocketConsumer):
         self._busy = False
         self._last_alert_ts = 0.0
         try:
-            self._alert_min_interval = float(os.getenv("ALERT_MIN_INTERVAL_SEC", "2.0"))
+            # Menor intervalo por defecto para evitar demoras perceptibles
+            self._alert_min_interval = float(os.getenv("ALERT_MIN_INTERVAL_SEC", "0.5"))
         except Exception:
-            self._alert_min_interval = 2.0
+            self._alert_min_interval = 0.5
+        self._sent_first_alert = False
 
         # Flags de entorno: modelos y tamaños
         self.use_primary = os.getenv("USE_PRIMARY", "1").lower() in {"1", "true", "yes"}
@@ -42,6 +45,7 @@ class StreamConsumer(AsyncWebsocketConsumer):
         self.coco_model_file = os.getenv("COCO_MODEL_FILE", "yolov8n.pt")
         self.primary_model_file = os.getenv("PRIMARY_MODEL_FILE", "NineraV.pt")
 
+        self._notifier = NotificationMediator()
         await self.accept()
         await self.send_json({"type": "ready", "message": "stream accepted"})
 
@@ -157,15 +161,47 @@ class StreamConsumer(AsyncWebsocketConsumer):
 
             over = [d for d in det_items if d.get("conf", 0.0) >= threshold_for(str(d.get("label", "")))]
 
+            # Derivar "tipo de riesgo" legible a partir de labels detectados
+            def risk_types(items: List[dict]) -> List[str]:
+                labels = {str((i.get("label") or "")).lower() for i in items}
+                risks = []
+                if any(x in labels for x in ["knife", "cuchillo"]):
+                    risks.append("Cuchillo")
+                if any(x in labels for x in ["scissors", "tijera", "tijeras"]):
+                    risks.append("Tijeras")
+                if any(x in labels for x in [
+                    "kitchen", "cocina", "cooker", "stove", "horno", "oven"
+                ]):
+                    risks.append("Estufa/Cocina")
+                if any(x in labels for x in ["stairs", "escalera", "escaleras"]):
+                    risks.append("Escaleras")
+                if any(x in labels for x in [
+                    "chair","silla","bar","barra","table","mesa","stool","taburete","counter","mostrador","shelf","estante"
+                ]):
+                    risks.append("Altura")
+                if any(x in labels for x in ["pot", "olla", "pan"]):
+                    risks.append("Olla/Recipiente caliente")
+                return risks
+
             if over:
                 try:
                     now = time.time()
-                    if (now - self._last_alert_ts) >= self._alert_min_interval:
-                        text = " · ".join(
+                    must_fire = (now - self._last_alert_ts) >= self._alert_min_interval or (not self._sent_first_alert)
+                    if must_fire:
+                        risks = risk_types(over)
+                        details = " · ".join(
                             [f"[{d.get('src')}] {d.get('label')} {d.get('conf'):.2f}" for d in over]
                         )
+                        prefix = f"Riesgo: {', '.join(risks)} | " if risks else ""
+                        text = prefix + details
                         await self._create_stream_alert(text)
+                        # Notificación opcional por Telegram (si está configurado)
+                        try:
+                            self._notifier.notify(text, frame_bgr=frame)
+                        except Exception:
+                            logging.exception("[stream] telegram notify failed")
                         self._last_alert_ts = now
+                        self._sent_first_alert = True
                 except Exception:
                     logging.exception("[stream] persist alert failed")
 
@@ -183,4 +219,3 @@ class StreamConsumer(AsyncWebsocketConsumer):
     @database_sync_to_async
     def _create_stream_alert(self, text: str):
         return StreamAlert.objects.create(text=text)
-
