@@ -140,3 +140,4 @@ class StreamConsumer(AsyncWebsocketConsumer):
     @database_sync_to_async
     def _create_stream_alert(self, text: str):
         return StreamAlert.objects.create(text=text)
+
