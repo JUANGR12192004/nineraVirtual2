@@ -103,6 +103,7 @@
   let started = false, ws, sendCanvas, ctx, videoEl, overlay, pending=false;
 
   async function startStreaming(){
+    try { window.nvStreamActive = true; } catch {}
     if (started) return; started = true;
     container.innerHTML = '<p class="dash-video__placeholder">Inicializando cámara...</p>';
     try {
@@ -120,6 +121,13 @@
       ws = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/ws/stream');
       sendCanvas = document.createElement('canvas');
       ctx = sendCanvas.getContext('2d');
+      // Reusar WS de preconexión si está disponible
+      try {
+        if (window.nvWS && (window.nvWS.readyState === 0 || window.nvWS.readyState === 1)) {
+          try { ws && ws.close && ws.close(); } catch(e) {}
+          ws = window.nvWS; window.nvWSUsed = true;
+        }
+      } catch(e) {}
 
       function draw(items, srcW, srcH){
         const rect = videoEl.getBoundingClientRect();
@@ -140,6 +148,8 @@
         };
         setInterval(tick, 250);
       };
+      // Si ya está abierto (preconexión), inicia de inmediato
+      if (ws.readyState === 1) { try { ws.onopen(); } catch(e) {} }
        ws.onmessage = (ev) => {
          try {
            const msg = JSON.parse(ev.data);
@@ -175,6 +185,27 @@
 
   if (btnCam) btnCam.addEventListener('click', startStreaming);
 })();
+(function(){
+  // Preconexión WebSocket para calentar la ruta y modelos
+  try { if (window.nvStreamActive === undefined) window.nvStreamActive = false; } catch {}
+  let preWs;
+  function open(){
+    try {
+      preWs = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/ws/stream');
+      const killer = setInterval(()=>{
+        if (window.nvStreamActive) { try{ preWs && preWs.close(); }catch{} clearInterval(killer); }
+      }, 500);
+      // Cierre automático tras 2 minutos si no hay streaming
+      setTimeout(()=>{ try{ preWs && preWs.close(); }catch{} }, 120000);
+      window.addEventListener('pagehide', ()=>{ try{ preWs && preWs.close(); }catch{} });
+    } catch {}
+  }
+  if (document.readyState === 'complete' || document.readyState === 'interactive') {
+    setTimeout(open, 0);
+  } else {
+    document.addEventListener('DOMContentLoaded', open);
+  }
+})();
 </script>
 <script>
 (function(){
@@ -190,6 +221,7 @@
     if (pushTimer) { try{ clearInterval(pushTimer); }catch{} pushTimer=null; }
     try { if (ws && ws.readyState <= 1) ws.close(); } catch {}
     try { if (videoEl) { videoEl.pause(); if (videoEl.src && videoEl.src.startsWith('blob:')) URL.revokeObjectURL(videoEl.src); } } catch {}
+    try { window.nvStreamActive = false; } catch {}
   }
   window.addEventListener('pagehide', cleanup);
 
@@ -227,6 +259,7 @@
   }
 
   function startLocalVideo(file){
+    try { window.nvStreamActive = true; } catch {}
     cleanup();
     // UI
     container.style.position='relative';

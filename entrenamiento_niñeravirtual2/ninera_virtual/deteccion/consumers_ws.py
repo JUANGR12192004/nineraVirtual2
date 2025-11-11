@@ -10,6 +10,7 @@ from typing import List, Tuple
 import cv2
 import numpy as np
 from channels.db import database_sync_to_async
+import asyncio
 from channels.generic.websocket import AsyncWebsocketConsumer
 
 try:
@@ -48,6 +49,11 @@ class StreamConsumer(AsyncWebsocketConsumer):
         self._notifier = NotificationMediator()
         await self.accept()
         await self.send_json({"type": "ready", "message": "stream accepted"})
+        if os.getenv("WARMUP_ON_CONNECT", "1").lower() in {"1","true","yes"}:
+            try:
+                await asyncio.to_thread(self._lazy_models)
+            except Exception:
+                logging.exception("[stream] warmup models failed")
 
     def _lazy_models(self) -> Tuple[object | None, object | None]:
         if YOLO is None:
