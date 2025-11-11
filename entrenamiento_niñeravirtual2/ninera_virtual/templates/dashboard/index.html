@@ -100,7 +100,7 @@
   if (btnVideo && fileInput) btnVideo.addEventListener('click',()=>fileInput.click());
 
   const container = document.querySelector('.dash-video');
-  let started = false, ws, sendCanvas, ctx, videoEl, overlay;
+  let started = false, ws, sendCanvas, ctx, videoEl, overlay, pending=false;
 
   async function startStreaming(){
     if (started) return; started = true;
@@ -132,17 +132,17 @@
 
       ws.onopen = () => {
         const tick = () => {
-          if (!videoEl || !videoEl.videoWidth) return;
-          const targetW = 416; const targetH = Math.round(videoEl.videoHeight * (targetW / videoEl.videoWidth));
+          if (!videoEl || !videoEl.videoWidth || pending || ws.readyState !== 1) return;
+          const targetW = parseInt('{{ stream_img_w|default:"416" }}',10)||416; const targetH = Math.round(videoEl.videoHeight * (targetW / videoEl.videoWidth));
           sendCanvas.width = targetW; sendCanvas.height = targetH; ctx.drawImage(videoEl,0,0,targetW,targetH);
           const dataUrl = sendCanvas.toDataURL('image/jpeg', 0.6);
-          ws.send(JSON.stringify({type:'frame', data:dataUrl, ts:Date.now(), w:targetW, h:targetH}));
+          try { ws.send(JSON.stringify({type:'frame', data:dataUrl, ts:Date.now(), w:targetW, h:targetH})); pending = true; } catch {}
         };
-        setInterval(tick, 1000);
+        setInterval(tick, 250);
       };
-      ws.onmessage = (ev) => {
-        try {
-          const msg = JSON.parse(ev.data);
+       ws.onmessage = (ev) => {
+         try {
+           const msg = JSON.parse(ev.data);
           if (msg.type==='detections') {
             const items = msg.items||[]; draw(items, sendCanvas.width||416, sendCanvas.height||234);
             // métricas rápidas y alerta textual, usando 'over' del servidor (umbrales por clase)
@@ -161,8 +161,9 @@
               bumpMetrics(over);
             }
           }
-        } catch {}
-      };
+         } catch {}
+         pending = false;
+       };
       ws.onerror = () => { console.warn('WS error'); };
       ws.onclose = () => { console.warn('WS closed'); };
     } catch(e) {
@@ -183,13 +184,14 @@
   const container = document.querySelector('.dash-video');
   if (!fileInput || !container) return;
 
-  let ws, sendCanvas, ctx, videoEl, overlay, pushTimer;
+  let ws, sendCanvas, ctx, videoEl, overlay, pushTimer, pending=false;
 
   function cleanup(){
     if (pushTimer) { try{ clearInterval(pushTimer); }catch{} pushTimer=null; }
     try { if (ws && ws.readyState <= 1) ws.close(); } catch {}
     try { if (videoEl) { videoEl.pause(); if (videoEl.src && videoEl.src.startsWith('blob:')) URL.revokeObjectURL(videoEl.src); } } catch {}
   }
+  window.addEventListener('pagehide', cleanup);
 
   function draw(items, srcW, srcH){
     if (!overlay || !videoEl) return;
@@ -242,13 +244,13 @@
     ctx = sendCanvas.getContext('2d');
     ws.onopen = () => {
       pushTimer = setInterval(()=>{
-        if (!videoEl || !videoEl.videoWidth) return;
-        const targetW = 416; const targetH = Math.round(videoEl.videoHeight * (targetW / videoEl.videoWidth));
+        if (!videoEl || !videoEl.videoWidth || pending || ws.readyState !== 1) return;
+        const targetW = parseInt('{{ stream_img_w|default:"416" }}',10)||416; const targetH = Math.round(videoEl.videoHeight * (targetW / videoEl.videoWidth));
         sendCanvas.width = targetW; sendCanvas.height = targetH;
         ctx.drawImage(videoEl,0,0,targetW,targetH);
         const dataUrl = sendCanvas.toDataURL('image/jpeg', 0.6);
-        try { ws && ws.readyState === 1 && ws.send(JSON.stringify({type:'frame', data:dataUrl, ts:Date.now(), w:targetW, h:targetH})); } catch {}
-      }, 300);
+        try { ws.send(JSON.stringify({type:'frame', data:dataUrl, ts:Date.now(), w:targetW, h:targetH})); pending = true; } catch {}
+      }, 250);
     };
         ws.onmessage = (ev)=>{
       try{
@@ -272,8 +274,8 @@
         }
       }catch{}
     };
-    ws.onerror = ()=>{ console.warn('WS error'); };
-    ws.onclose = ()=>{ console.warn('WS closed'); };
+    ws.onerror = ()=>{ pending=false; console.warn('WS error'); };
+    ws.onclose = ()=>{ pending=false; console.warn('WS closed'); };
   }
 
   fileInput.addEventListener('change', (e)=>{

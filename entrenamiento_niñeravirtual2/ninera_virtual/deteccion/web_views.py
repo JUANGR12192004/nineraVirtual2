@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from typing import Dict, List
 
 from django.contrib import messages
+import os
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
 from django.http import StreamingHttpResponse
@@ -178,10 +179,12 @@ def web_dashboard(request: HttpRequest) -> HttpResponse:
     recent_results = InferenceResult.objects.order_by("-uploaded_at")[:3]
     # Métricas a partir de alertas persistidas (stream)
     metrics = _build_metrics_from_alerts(recent_alerts)
+    stream_img_w = int(os.getenv("STREAM_IMG_W", "416"))
     context = {
         "user": user,
         "alerts": recent_alerts or recent_results,
         "metrics": metrics,
         "upload_form": UploadForm(),
+        "stream_img_w": stream_img_w,
     }
     return render(request, "dashboard/index.html", context)

@@ -1,5 +1,6 @@
 ﻿from pathlib import Path
 from typing import Dict, Union, List
+import os
 
 import cv2
 
@@ -38,9 +39,10 @@ def run_inference(file_path: FilePath, models: Dict[str, object]) -> Dict[str, o
         return {"output_path": str(resolved_path), "detections": [], "models_used": []}
 
     h, w = img.shape[:2]
-    if w > 640:
-        new_h = int(h * (640 / w))
-        img = cv2.resize(img, (640, new_h))
+    w_limit = int(os.getenv("INFER_IMG_W", "416"))
+    if w > w_limit:
+        new_h = int(h * (w_limit / w))
+        img = cv2.resize(img, (w_limit, new_h))
 
     used: List[str] = []
     detections: List[dict] = []

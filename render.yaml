@@ -36,10 +36,14 @@ services:
         value: "320"
       - key: COCO_MODEL_FILE
         value: yolov8s.pt
+      - key: PRIMARY_MODEL_FILE
+        value: NineraV.pt
       - key: YOLO_CONF_COCO
         value: "0.25"
       - key: YOLO_CONF_PRIMARY
         value: "0.35"
+      - key: INFER_IMG_W
+        value: "416"
       # Telegram (opcional, agregar en panel o secrets)
       - key: TELEGRAM_BOT_TOKEN
         sync: false
